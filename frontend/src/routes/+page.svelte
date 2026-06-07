@@ -23,7 +23,7 @@
 			description: '복잡하고 읽기 어려운 JSON 데이터를 깔끔하게 정리하고 시각화합니다.',
 			icon: '{}',
 			color: 'bg-blue-100 text-blue-600',
-			status: ToolStatus.COMING_SOON
+			status: ToolStatus.READY
 		},
 		{
 			id: 'unit-calc',
