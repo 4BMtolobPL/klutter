@@ -1,18 +1,35 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import JsonEditor from './JsonEditor.svelte';
 
 	let inputText = $state('');
 	let copied = $state(false);
 
 	let result = $derived.by(() => {
 		if (!inputText.trim()) {
-			return { outputText: '', errorMsg: '' };
+			return { outputText: '', errorMsg: '', errorLine: null };
 		}
 		try {
 			const parsed = JSON.parse(inputText);
-			return { outputText: JSON.stringify(parsed, null, 2), errorMsg: '' };
+			return { outputText: JSON.stringify(parsed, null, 2), errorMsg: '', errorLine: null };
 		} catch (e) {
-			return { outputText: '', errorMsg: (e as Error).message };
+			const msg = (e as Error).message;
+			let errorLine: number | null = null;
+
+			// Attempt to extract position/line from error message
+			// Standard Chrome/V8: "Unexpected token } in JSON at position 123"
+			// Firefox/Safari: "JSON.parse: unexpected character at line 2 column 1 of the JSON data"
+			const posMatch = msg.match(/at position (\d+)/);
+			const lineMatch = msg.match(/at line (\d+)/);
+
+			if (lineMatch) {
+				errorLine = parseInt(lineMatch[1], 10);
+			} else if (posMatch) {
+				const pos = parseInt(posMatch[1], 10);
+				errorLine = inputText.substring(0, pos).split('\n').length;
+			}
+
+			return { outputText: '', errorMsg: msg, errorLine };
 		}
 	});
 
@@ -87,12 +104,9 @@
 						지우기
 					</button>
 				</div>
-				<textarea
-					id="input"
-					bind:value={inputText}
-					placeholder="여기에 JSON 데이터를 붙여넣으세요..."
-					class="h-125 w-full resize-none rounded-3xl border border-slate-200 bg-white p-6 font-mono text-sm shadow-sm transition-all focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
-				></textarea>
+				<div class="h-125">
+					<JsonEditor bind:value={inputText} errorLine={result.errorLine} />
+				</div>
 			</div>
 
 			<!-- Output Section -->
@@ -150,14 +164,11 @@
 						{/if}
 					</div>
 				</div>
-				<div
-					id="output"
-					class="relative h-125 w-full overflow-hidden rounded-3xl border {result.errorMsg
-						? 'border-red-200 bg-red-50/30'
-						: 'border-blue-100 bg-blue-50/30'} shadow-inner"
-				>
+				<div class="h-125">
 					{#if result.errorMsg}
-						<div class="p-6 text-sm font-medium text-red-500">
+						<div
+							class="h-full overflow-auto rounded-3xl border border-red-200 bg-red-50/30 p-6 text-sm font-medium text-red-500 shadow-inner"
+						>
 							<div class="mb-2 flex items-center gap-2 font-bold uppercase">
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
@@ -179,12 +190,18 @@
 								Invalid JSON
 							</div>
 							{result.errorMsg}
+							{#if result.errorLine}
+								<div class="mt-2 text-xs font-bold text-red-400">
+									줄 번호 {result.errorLine} 근처를 확인해 보세요.
+								</div>
+							{/if}
 						</div>
 					{:else if result.outputText}
-						<pre
-							class="h-full overflow-auto p-6 font-mono text-sm whitespace-pre text-blue-900">{result.outputText}</pre>
+						<JsonEditor value={result.outputText} readonly={true} />
 					{:else}
-						<div class="flex h-full items-center justify-center text-sm text-slate-400">
+						<div
+							class="flex h-full items-center justify-center rounded-3xl border border-blue-100 bg-blue-50/30 text-sm text-slate-400"
+						>
 							결과가 여기에 표시됩니다.
 						</div>
 					{/if}
@@ -220,21 +237,3 @@
 		© 2026 Klutter JSON Formatter Tool.
 	</footer>
 </div>
-
-<style>
-	/* Custom scrollbar for output area */
-	pre::-webkit-scrollbar {
-		width: 8px;
-		height: 8px;
-	}
-	pre::-webkit-scrollbar-track {
-		background: transparent;
-	}
-	pre::-webkit-scrollbar-thumb {
-		background: #dbeafe;
-		border-radius: 10px;
-	}
-	pre::-webkit-scrollbar-thumb:hover {
-		background: #bfdbfe;
-	}
-</style>
