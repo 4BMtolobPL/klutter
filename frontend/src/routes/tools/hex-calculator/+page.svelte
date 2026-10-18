@@ -228,6 +228,21 @@
 		return result;
 	}
 
+	// --- Paste ---
+	function handlePaste(e: ClipboardEvent & { currentTarget: EventTarget & HTMLInputElement }) {
+		const pasted = e.clipboardData?.getData('text') ?? '';
+		if (!pasted.includes(',')) return;
+		e.preventDefault();
+		const input = e.currentTarget;
+		const cleaned = pasted.replace(/,/g, '');
+		const start = input.selectionStart ?? input.value.length;
+		const end = input.selectionEnd ?? input.value.length;
+		input.value = input.value.slice(0, start) + cleaned + input.value.slice(end);
+		const caret = start + cleaned.length;
+		input.setSelectionRange(caret, caret);
+		input.dispatchEvent(new Event('input', { bubbles: true }));
+	}
+
 	// --- Clipboard ---
 	async function copyToClipboard(text: string, key: string) {
 		if (!text) return;
@@ -303,6 +318,7 @@
 							id="convert-input"
 							type="text"
 							bind:value={convertInput}
+							onpaste={handlePaste}
 							placeholder={baseInfo[convertBase].placeholder}
 							class="w-full rounded-3xl border border-slate-200 bg-white px-6 py-4 font-mono text-lg shadow-sm transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 						/>
@@ -383,6 +399,7 @@
 						id="expr-input"
 						type="text"
 						bind:value={exprInput}
+						onpaste={handlePaste}
 						placeholder="예: FF + 0b1010 * (12 - 3)"
 						class="w-full rounded-3xl border border-slate-200 bg-white px-6 py-4 font-mono text-lg shadow-sm transition-all focus:border-transparent focus:ring-2 focus:ring-indigo-500 focus:outline-none"
 					/>
@@ -455,6 +472,9 @@
 						</li>
 						<li>
 							• <strong>혼합 진수 연산:</strong> 접두어를 붙이면 다른 진수 리터럴을 섞어 쓸 수 있습니다.
+						</li>
+						<li>
+							• <strong>콤마 자동 제거:</strong> 콤마가 포함된 숫자를 붙여넣으면 콤마가 자동으로 제거됩니다.
 						</li>
 					</ul>
 					<ul class="space-y-2 text-sm leading-relaxed text-slate-500">
