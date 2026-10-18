@@ -8,6 +8,12 @@
 		[ToolStatus.DRAFT]: '비공개'
 	};
 
+	const toolPaths: Record<string, ReturnType<typeof resolve>> = {
+		luxury: resolve('/tools/luxury'),
+		'json-viewer': resolve('/tools/json-viewer'),
+		'hex-calculator': resolve('/tools/hex-calculator')
+	};
+
 	const tools: Tool[] = [
 		{
 			id: 'luxury',
@@ -23,6 +29,14 @@
 			description: '복잡하고 읽기 어려운 JSON 데이터를 깔끔하게 정리하고 시각화합니다.',
 			icon: '{}',
 			color: 'bg-blue-100 text-blue-600',
+			status: ToolStatus.READY
+		},
+		{
+			id: 'hex-calculator',
+			title: 'HEX 계산기',
+			description: 'HEX·DEC·BIN·OCT 실시간 변환과 16진수 사칙연산을 지원합니다.',
+			icon: '0x',
+			color: 'bg-purple-100 text-purple-600',
 			status: ToolStatus.READY
 		},
 		{
@@ -120,9 +134,7 @@
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{#each filteredTools as tool (tool.id)}
 				<a
-					href={tool.status === ToolStatus.READY
-						? resolve('/tools/[slug]', { slug: tool.id })
-						: 'javascript:void(0)'}
+					href={tool.status === ToolStatus.READY ? toolPaths[tool.id] : 'javascript:void(0)'}
 					class="group relative rounded-3xl border border-slate-200 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-200/50 {tool.status !==
 					ToolStatus.READY
 						? 'cursor-not-allowed opacity-75'
